@@ -31,12 +31,12 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
-uint16_t MIC,tmp;  		//����16λ�޷������ͱ���MIC��tmp�洢��˷�ADC����ֵ
-uint16_t stat = 0;		//����16λ�޷������ͱ���stat�洢PWM�仯
-uint8_t CHG;					//����8λ�޷������ͱ���CHG�洢���״̬
-uint8_t color;				//����8λ�޷������ͱ���color�洢LED��ɫ
-uint8_t light = 100;	//����8λ�޷������ͱ���light���ڴ洢pwmռ�ձ�
-uint8_t add = 0;			//����8λ�޷������ͱ���add���ڴ洢�Ӽ�״̬
+uint16_t MIC,tmp;  		//定义16位无符号整型变量MIC和tmp存储麦克风ADC采样值
+uint16_t stat = 0;		//定义16位无符号整型变量stat存储PWM变化
+uint8_t CHG;					//定义8位无符号整型变量CHG存储充电状态
+uint8_t color;				//定义8位无符号整型变量color存储LED颜色
+uint8_t light = 100;	//定义8位无符号整型变量light用于存储pwm占空比
+uint8_t add = 0;			//定义8位无符号整型变量add用于存储加减状态
 
 
 /* USER CODE END PTD */
@@ -65,7 +65,7 @@ void GREEN_Light();
 void BLUE_Light();
 void Light_OFF(); 
 void RGB_Light();
-void Charge_Status();		//�������Ӻ���
+void Charge_Status();		//声明各子函数
 
 /* USER CODE END PFP */
 
@@ -112,15 +112,15 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	
-	RED_Light();				//����Ĭ�������
+	RED_Light();				//开机默认亮红灯
 	
   while (1)
   {			
-		RGB_Light();			//����RGB�Ӻ���
-		Charge_Status();	//���ó��״̬�Ӻ���
-		HAL_TIM_PWM_Start((TIM_HandleTypeDef *) &htim3, (uint32_t) TIM_CHANNEL_1);		//ʹ�ܶ�ʱ��3 CH1
-		HAL_TIM_PWM_Start((TIM_HandleTypeDef *) &htim3, (uint32_t) TIM_CHANNEL_2);		//ʹ�ܶ�ʱ��3 CH2
-		HAL_TIM_PWM_Start((TIM_HandleTypeDef *) &htim3, (uint32_t) TIM_CHANNEL_3);		//ʹ�ܶ�ʱ��3 CH3 ����RGB��ͨ����MOS��PWM����
+		RGB_Light();			//调用RGB子函数
+		Charge_Status();	//调用充电状态子函数
+		HAL_TIM_PWM_Start((TIM_HandleTypeDef *) &htim3, (uint32_t) TIM_CHANNEL_1);		//使能定时器3 CH1
+		HAL_TIM_PWM_Start((TIM_HandleTypeDef *) &htim3, (uint32_t) TIM_CHANNEL_2);		//使能定时器3 CH2
+		HAL_TIM_PWM_Start((TIM_HandleTypeDef *) &htim3, (uint32_t) TIM_CHANNEL_3);		//使能定时器3 CH3 用于RGB三通道的MOS管PWM控制
 		
 		
 		
@@ -182,20 +182,20 @@ void SystemClock_Config(void)
 
 
 
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)	//��ʱ���жϷ�����
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)	//定时器中断服务函数
 {
-	if(htim->Instance == TIM1)					//��Ϊ��ʱ��1
+	if(htim->Instance == TIM1)					//若为定时器1
 	{
-		HAL_ADC_Start(&hadc1);						//ADC1����ת��
-		MIC = HAL_ADC_GetValue(&hadc1);		//��ADC1��ֵ����MIC
-		HAL_ADC_Stop(&hadc1);							//ADC1ֹͣת��
-		if (MIC > tmp)	tmp = MIC;				//��¼MIC�����ֵ
+		HAL_ADC_Start(&hadc1);						//ADC1启动转换
+		MIC = HAL_ADC_GetValue(&hadc1);		//将ADC1的值赋给MIC
+		HAL_ADC_Stop(&hadc1);							//ADC1停止转换
+		if (MIC > tmp)	tmp = MIC;				//记录MIC的最大值
 		
-		if (MIC >= 3850)			//��MIC��ADCֵ����3850���ж��ܵ����
+		if (MIC >= 3850)			//若MIC的ADC值大于3850则判断受到打击
 		{
-			switch (color)			//�жϵ�ǰ��ɫ
+			switch (color)			//判断当前颜色
 			{
-				case 1:						//��Ϊ1��ɫ
+				case 1:						//若为1红色
 				{
 					Light_OFF();
 					HAL_Delay(40);
@@ -203,10 +203,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)	//��ʱ���жϷ�����
 					HAL_Delay(40);
 					Light_OFF();
 					HAL_Delay(40);
-					RED_Light();		//��ɫ��˸����
+					RED_Light();		//红色闪烁两次
 					break;
 				}
-				case 2:						//��Ϊ2��ɫ
+				case 2:						//若为2绿色
 				{
 					Light_OFF();
 					HAL_Delay(40);
@@ -214,10 +214,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)	//��ʱ���жϷ�����
 					HAL_Delay(40);
 					Light_OFF();
 					HAL_Delay(40);
-					GREEN_Light();	//��ɫ��˸����
+					GREEN_Light();	//绿色闪烁两次
 					break;
 				}
-				case 3:						//��Ϊ3��ɫ
+				case 3:						//若为3蓝色
 				{
 					Light_OFF();
 					HAL_Delay(40);
@@ -225,7 +225,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)	//��ʱ���жϷ�����
 					HAL_Delay(40);
 					Light_OFF();
 					HAL_Delay(40);
-					BLUE_Light();		//��ɫ��˸����
+					BLUE_Light();		//蓝色闪烁两次
 					break;
 				}
 				
@@ -236,90 +236,90 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)	//��ʱ���жϷ�����
 
 
 
-void RED_Light() 			//����Ӻ���
+void RED_Light() 			//红灯子函数
 {
-	color = 1;		 			//color��1��ʾ��ɫ
-	TIM3->CCR3 = 0;			//��ɫLED��MOS��PWM 100%
-	TIM3->CCR2 = 100;		//��ɫLED��MOS��PWM 0%
-	TIM3->CCR1 = 1000;	//��ɫLED��MOS��PWM 0%
+	color = 1;		 			//color赋1表示红色
+	TIM3->CCR3 = 0;			//红色LED的MOS管PWM 100%
+	TIM3->CCR2 = 100;		//绿色LED的MOS管PWM 0%
+	TIM3->CCR1 = 1000;	//蓝色LED的MOS管PWM 0%
 }	
 
 
 
-void GREEN_Light() 		//�̵��Ӻ���
+void GREEN_Light() 		//绿灯子函数
 {
-	color = 2;					//color��2��ʾ��ɫ
-	TIM3->CCR3 = 100;		//��ɫLED��MOS��PWM 0%
-	TIM3->CCR2 = 0;			//��ɫLED��MOS��PWM 100%
-	TIM3->CCR1 = 100;		//��ɫLED��MOS��PWM 0%
+	color = 2;					//color赋2表示绿色
+	TIM3->CCR3 = 100;		//红色LED的MOS管PWM 0%
+	TIM3->CCR2 = 0;			//绿色LED的MOS管PWM 100%
+	TIM3->CCR1 = 100;		//蓝色LED的MOS管PWM 0%
 }
 
 
 
-void BLUE_Light()			//�����Ӻ���
+void BLUE_Light()			//蓝灯子函数
 {
-	color = 3;					//color��3��ʾ��ɫ
-	TIM3->CCR3 = 100;		//��ɫLED��MOS��PWM 0%
-	TIM3->CCR2 = 100;		//��ɫLED��MOS��PWM 0%
-	TIM3->CCR1 = 0;			//��ɫLED��MOS��PWM 100%
+	color = 3;					//color赋3表示蓝色
+	TIM3->CCR3 = 100;		//红色LED的MOS管PWM 0%
+	TIM3->CCR2 = 100;		//绿色LED的MOS管PWM 0%
+	TIM3->CCR1 = 0;			//蓝色LED的MOS管PWM 100%
 }
 
 
 
-void Light_OFF()			//�ص��Ӻ���
+void Light_OFF()			//关灯子函数
 {
-	color = 0;       		//color��0��ʾϨ��
-	TIM3->CCR3 = 100;		//��ɫLED��MOS��PWM 0%
-	TIM3->CCR2 = 100;		//��ɫLED��MOS��PWM 0%
-	TIM3->CCR1 = 100;		//��ɫLED��MOS��PWM 0%
+	color = 0;       		//color赋0表示熄灭
+	TIM3->CCR3 = 100;		//红色LED的MOS管PWM 0%
+	TIM3->CCR2 = 100;		//绿色LED的MOS管PWM 0%
+	TIM3->CCR1 = 100;		//蓝色LED的MOS管PWM 0%
 }
 
 
 
-void Charge_Status()	//���������Ӻ���
+void Charge_Status()	//充电呼吸灯子函数
 {
-	CHG = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_7);		//��ȡ���״̬
+	CHG = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_7);		//读取充电状态
 		
-	if (CHG == 1)				//��CHGΪ1���ж����ڳ�粢������ɫ������
+	if (CHG == 1)				//若CHG为1则判断正在充电并启动绿色呼吸灯
 	{
-		color = 1;				//color��1��ʾ��ɫ
-		HAL_TIM_Base_Stop_IT((TIM_HandleTypeDef *) &htim1);	//���ö�ʱ��1
+		color = 1;				//color赋1表示红色
+		HAL_TIM_Base_Stop_IT((TIM_HandleTypeDef *) &htim1);	//禁用定时器1
 		
-		if(light == 105) 			//��light����100
-			{add = 0;}					//��add��Ϊ0��ģʽ
-		else if(light == 0) 	//��light����0
-			{add = 1;} 					//��add��Ϊ1��ģʽ
+		if(light == 105) 			//若light等于100
+			{add = 0;}					//则add设为0减模式
+		else if(light == 0) 	//若light等于0
+			{add = 1;} 					//则add设为1加模式
 			
-		if(add == 0) 					//��add����0��ģʽ
-			{light--;}					//��light�Լ�
-		else if(add == 1) 		//��add����1��ģʽ
-			{light++;}					//��light�Լ�
+		if(add == 0) 					//若add等于0减模式
+			{light--;}					//则light自减
+		else if(add == 1) 		//若add等于1加模式
+			{light++;}					//则light自加
 			
-		TIM3->CCR3 = 100;			//��ɫLED��MOS��PWM 0%
-		TIM3->CCR1 = 100;			//��ɫLED��MOS��PWM 0%
-		TIM3->CCR2 = light;		//��ɫLED��MOS��PWMΪlight
-		HAL_Delay(15);				//��ʱ10ms
+		TIM3->CCR3 = 100;			//红色LED的MOS管PWM 0%
+		TIM3->CCR1 = 100;			//蓝色LED的MOS管PWM 0%
+		TIM3->CCR2 = light;		//绿色LED的MOS管PWM为light
+		HAL_Delay(15);				//延时10ms
 	}
 		
-	else									//�����ж�δ�ڳ�粢�ָ�ԭ״̬
+	else									//否则判断未在充电并恢复原状态
 	{
-		HAL_TIM_Base_Start_IT((TIM_HandleTypeDef *) &htim1);	//ʹ�ܶ�ʱ��1
+		HAL_TIM_Base_Start_IT((TIM_HandleTypeDef *) &htim1);	//使能定时器1
 		
-		switch (color)			//�жϵ�ǰ״̬
+		switch (color)			//判断当前状态
 		{
-			case 1:						//��Ϊ״̬Ϊ1��ɫ
+			case 1:						//若为状态为1红色
 			{
-				RED_Light();		//��ָ���ɫ״̬
+				RED_Light();		//则恢复红色状态
 				break;
 			}
-			case 2:						//��״̬Ϊ2��ɫ
+			case 2:						//若状态为2绿色
 			{
-				GREEN_Light();	//��ָ���ɫ״̬
+				GREEN_Light();	//则恢复绿色状态
 				break;
 			}
-			case 3:						//��״̬Ϊ3��ɫ
+			case 3:						//若状态为3蓝色
 			{
-				BLUE_Light();		//��ָ���ɫ״̬
+				BLUE_Light();		//则恢复蓝色状态
 				break;
 			}
 		}
@@ -328,77 +328,77 @@ void Charge_Status()	//���������Ӻ���
 
 
 
-void RGB_Light()		//RGB�����Ӻ���
+void RGB_Light()		//RGB渐变子函数
 {
-	if (color == 2)		//��״̬Ϊ2��ɫ
+	if (color == 2)		//若状态为2绿色
 	{
-		HAL_TIM_Base_Stop_IT((TIM_HandleTypeDef *) &htim1);	//���ö�ʱ��1
+		HAL_TIM_Base_Stop_IT((TIM_HandleTypeDef *) &htim1);	//禁用定时器1
 	
-		if (stat >= 50 && stat < 150)		//��ɫ����ɫ light��100-0
+		if (stat >= 50 && stat < 150)		//绿色到红色 light从100-0
 		{	
-			if(light == 100) 			//��light����100
-				{add = 0;}					//��add��Ϊ0��ģʽ
-			else if(light == 0) 	//��light����0
-				{add = 1;} 					//��add��Ϊ1��ģʽ
+			if(light == 100) 			//若light等于100
+				{add = 0;}					//则add设为0减模式
+			else if(light == 0) 	//若light等于0
+				{add = 1;} 					//则add设为1加模式
 							
-			if(add == 0) 					//��add����0��ģʽ
-				{light--;}					//��light�Լ�
-			else if(add == 1) 		//��add����1��ģʽ
-				{light++;}					//��light�Լ�
+			if(add == 0) 					//若add等于0减模式
+				{light--;}					//则light自减
+			else if(add == 1) 		//若add等于1加模式
+				{light++;}					//则light自加
 				
-			TIM3->CCR1 = 100;					//��ɫLED��MOS��PWM100-light
-			TIM3->CCR2 = 100 - light;	//��ɫLED��MOS��PWMΪlight
-			TIM3->CCR3 = light;				//��ɫLED��MOS��PWMΪ0
+			TIM3->CCR1 = 100;					//蓝色LED的MOS管PWM100-light
+			TIM3->CCR2 = 100 - light;	//绿色LED的MOS管PWM为light
+			TIM3->CCR3 = light;				//红色LED的MOS管PWM为0
 				
-			HAL_Delay(12);						//��ʱ12ms
+			HAL_Delay(12);						//延时12ms
 		}
 		
-		else if (stat>=200 && stat < 300)	//��ɫ����ɫ light��0-100
+		else if (stat>=200 && stat < 300)	//红色到蓝色 light从0-100
 		{
-			if(light == 100) 			//��light����100
-				{add = 0;}					//��add��Ϊ0��ģʽ
-			else if(light == 0) 	//��light����0
-				{add = 1;} 					//��add��Ϊ1��ģʽ
+			if(light == 100) 			//若light等于100
+				{add = 0;}					//则add设为0减模式
+			else if(light == 0) 	//若light等于0
+				{add = 1;} 					//则add设为1加模式
 							
-			if(add == 0) 					//��add����0��ģʽ
-				{light--;}					//��light�Լ�
-			else if(add == 1) 		//��add����1��ģʽ
-				{light++;}					//��light�Լ�
+			if(add == 0) 					//若add等于0减模式
+				{light--;}					//则light自减
+			else if(add == 1) 		//若add等于1加模式
+				{light++;}					//则light自加
 			
-			TIM3->CCR1 = 100 - light;	//��ɫLED��MOS��PWM100-light
-			TIM3->CCR2 = 100;					//��ɫLED��MOS��PWMΪlight
-			TIM3->CCR3 = light;				//��ɫLED��MOS��PWMΪ0
+			TIM3->CCR1 = 100 - light;	//蓝色LED的MOS管PWM100-light
+			TIM3->CCR2 = 100;					//绿色LED的MOS管PWM为light
+			TIM3->CCR3 = light;				//红色LED的MOS管PWM为0
 				
-			HAL_Delay(12);						//��ʱ12ms
+			HAL_Delay(12);						//延时12ms
 		}
 		
-		else if (stat>=350 && stat < 450)	//��ɫ����ɫ light��100-0
+		else if (stat>=350 && stat < 450)	//蓝色到绿色 light从100-0
 		{
-			if(light == 100) 			//��light����100
-				{add = 0;}					//��add��Ϊ0��ģʽ
-			else if(light == 0) 	//��light����0
-				{add = 1;} 					//��add��Ϊ1��ģʽ
+			if(light == 100) 			//若light等于100
+				{add = 0;}					//则add设为0减模式
+			else if(light == 0) 	//若light等于0
+				{add = 1;} 					//则add设为1加模式
 							
-			if(add == 0) 					//��add����0��ģʽ
-				{light--;}					//��light�Լ�
-			else if(add == 1) 		//��add����1��ģʽ
-				{light++;}					//��light�Լ�
+			if(add == 0) 					//若add等于0减模式
+				{light--;}					//则light自减
+			else if(add == 1) 		//若add等于1加模式
+				{light++;}					//则light自加
 					
-			TIM3->CCR1 = 100 - light;	//��ɫLED��MOS��PWM100-light
-			TIM3->CCR2 = light;				//��ɫLED��MOS��PWMΪlight
-			TIM3->CCR3 = 100;					//��ɫLED��MOS��PWMΪ0
+			TIM3->CCR1 = 100 - light;	//蓝色LED的MOS管PWM100-light
+			TIM3->CCR2 = light;				//绿色LED的MOS管PWM为light
+			TIM3->CCR3 = 100;					//红色LED的MOS管PWM为0
 				
-			HAL_Delay(12);						//��ʱ12ms
+			HAL_Delay(12);						//延时12ms
 		}
 		
-		if (stat >= 450)	//���һ��ѭ����
+		if (stat >= 450)	//完成一个循环后
 		{
-			light = 100;		//light��λΪ100
-			stat = 0;				//stat��λΪ0
+			light = 100;		//light复位为100
+			stat = 0;				//stat复位为0
 		}
-		else							//δ���һ��ѭ��ʱ
+		else							//未完成一个循环时
 		{
-			stat++;					//stat�Լ�
+			stat++;					//stat自加
 		}					
 	}
 }
@@ -406,19 +406,19 @@ void RGB_Light()		//RGB�����Ӻ���
 
 
 
-void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)	//�ⲿ�жϻص�����
+void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)	//外部中断回调函数
 {
-	if(GPIO_Pin == GPIO_PIN_1)	//��Ϊ�ⲿ�ж�1(��ư�ť)
+	if(GPIO_Pin == GPIO_PIN_1)	//若为外部中断1(红灯按钮)
 		{
-			RED_Light();						//���ú���Ӻ���
+			RED_Light();						//调用红灯子函数
 		}						
-	if(GPIO_Pin == GPIO_PIN_2)	//��Ϊ�ⲿ�ж�2(���ư�ť)
+	if(GPIO_Pin == GPIO_PIN_2)	//若为外部中断2(蓝灯按钮)
 		{
-			BLUE_Light();						//���������Ӻ���
+			BLUE_Light();						//调用蓝灯子函数
 		}						
-	if(GPIO_Pin == GPIO_PIN_3)	//��Ϊ�ⲿ�ж�3(�̵ư�ť)
+	if(GPIO_Pin == GPIO_PIN_3)	//若为外部中断3(绿灯按钮)
 		{
-			GREEN_Light();					//�����̵��Ӻ���(�̵ƶ���ΪRGBģʽ)
+			GREEN_Light();					//调用绿灯子函数(绿灯定义为RGB模式)
 		}					
 }
 
