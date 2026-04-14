@@ -187,7 +187,7 @@ ErrorStatus LL_RCC_DeInit(void)
   {}
 
   /* Reset PLLCFGR register */
-  LL_RCC_WriteReg(PLLCFGR, 16U << RCC_PLLCFGR_PLLN_Pos);
+  LL_RCC_WriteReg(PLLCFGR, 16UL << RCC_PLLCFGR_PLLN_Pos);
 
   /* Disable all interrupts */
   LL_RCC_WriteReg(CIER, 0x00000000U);
@@ -585,6 +585,7 @@ uint32_t LL_RCC_GetLPUARTClockFreq(uint32_t LPUARTxSource)
 #endif /* LPUART2 */
   else
   {
+    /*nothing to do*/
   }
 
   return lpuart_frequency;
