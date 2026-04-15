@@ -107,7 +107,7 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-
+	HAL_TIM_Base_Start_IT(&htim1);  // 开启定时器1中断，用于定时采样麦克风ADC
   /* USER CODE END 2 */
 
   /* Infinite loop */
