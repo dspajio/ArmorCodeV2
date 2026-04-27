@@ -235,7 +235,7 @@ void RED_Light() 			//红灯子函数
 	color = 1;		 			//color赋1表示红色
 	TIM3->CCR3 = 0;			//红色LED的MOS管PWM 100%
 	TIM3->CCR2 = 100;		//绿色LED的MOS管PWM 0%
-	TIM3->CCR1 = 1000;	//蓝色LED的MOS管PWM 0%
+	TIM3->CCR1 = 100;	//蓝色LED的MOS管PWM 0%
 }	
 
 
